@@ -1,6 +1,8 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { supabase, supabaseHelpers } from '../lib/supabase'
+import { getUsuarios, UsuarioLegacy } from '../lib/database'
 
 interface Usuario {
   id: string
@@ -151,43 +153,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval)
   }, [])
 
-  const login = (email: string, senha: string): { success: boolean; message?: string } => {
-    // Buscar usuários do localStorage
-    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]')
-    const usuario = usuarios.find((u: Usuario) => u.email === email && u.senha === senha && u.ativo)
-    
-    if (!usuario) {
-      return { success: false, message: 'Email ou senha inválidos' }
+  const login = async (email: string, senha: string): Promise<{ success: boolean; message?: string }> => {
+    try {
+      // Tentar buscar usuários do Supabase primeiro
+      const usuarios = await getUsuarios()
+      let usuario = usuarios.find((u: UsuarioLegacy) => u.email === email && u.senha === senha && u.ativo)
+      
+      // Se não encontrar no Supabase, buscar no localStorage como fallback
+      if (!usuario) {
+        const usuariosLocal = JSON.parse(localStorage.getItem('usuarios') || '[]')
+        usuario = usuariosLocal.find((u: Usuario) => u.email === email && u.senha === senha && u.ativo)
+      }
+      
+      if (!usuario) {
+        return { success: false, message: 'Email ou senha inválidos' }
+      }
+
+      // Converter para formato Usuario se necessário
+      const usuarioFormatado: Usuario = {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        senha: usuario.senha,
+        perfil: usuario.perfil as any,
+        condominioId: usuario.condominioId,
+        ativo: usuario.ativo,
+        dataCadastro: new Date(),
+        permissoes: []
+      }
+
+      // Verificar se o usuário já está logado (apenas para perfis que não são admin-master)
+      if (usuarioFormatado.perfil !== 'administrador-master' && isUserAlreadyLoggedIn(usuarioFormatado.id)) {
+        return { success: false, message: 'Este usuário já está logado em outra sessão. Apenas administradores master podem fazer login em múltiplos equipamentos.' }
+      }
+
+      // Criar nova sessão
+      const sessionId = generateSessionId()
+      const novaSessao: SessaoAtiva = {
+        sessionId,
+        userId: usuarioFormatado.id,
+        email: usuarioFormatado.email,
+        loginTime: new Date(),
+        lastActivity: new Date(),
+        browserInfo: getBrowserInfo()
+      }
+
+      // Adicionar sessão às sessões ativas
+      const sessoesAtivas = getSessoesAtivas()
+      sessoesAtivas.push(novaSessao)
+      setSessoesAtivas(sessoesAtivas)
+
+      // Definir usuário logado e sessão atual
+      setUsuarioLogado(usuarioFormatado)
+      setCurrentSessionId(sessionId)
+      localStorage.setItem('usuarioLogado', JSON.stringify(usuarioFormatado))
+      localStorage.setItem('currentSessionId', sessionId)
+
+      return { success: true }
+    } catch (error) {
+      console.error('Erro durante o login:', error)
+      return { success: false, message: 'Erro interno do sistema. Tente novamente.' }
     }
-
-    // Verificar se o usuário já está logado (apenas para perfis que não são admin-master)
-    if (usuario.perfil !== 'administrador-master' && isUserAlreadyLoggedIn(usuario.id)) {
-      return { success: false, message: 'Este usuário já está logado em outra sessão. Apenas administradores master podem fazer login em múltiplos equipamentos.' }
-    }
-
-    // Criar nova sessão
-    const sessionId = generateSessionId()
-    const novaSessao: SessaoAtiva = {
-      sessionId,
-      userId: usuario.id,
-      email: usuario.email,
-      loginTime: new Date(),
-      lastActivity: new Date(),
-      browserInfo: getBrowserInfo()
-    }
-
-    // Adicionar sessão às sessões ativas
-    const sessoesAtivas = getSessoesAtivas()
-    sessoesAtivas.push(novaSessao)
-    setSessoesAtivas(sessoesAtivas)
-
-    // Definir usuário logado e sessão atual
-    setUsuarioLogado(usuario)
-    setCurrentSessionId(sessionId)
-    localStorage.setItem('usuarioLogado', JSON.stringify(usuario))
-    localStorage.setItem('currentSessionId', sessionId)
-
-    return { success: true }
   }
 
   const logout = () => {

@@ -162,13 +162,14 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     setLoading(true)
 
     try {
-      const result = login(email, senha)
+      const result = await login(email, senha)
       if (result.success) {
         onLoginSuccess()
       } else {
         setError(result.message || 'Erro ao fazer login')
       }
     } catch (err) {
+      console.error('Erro durante o login:', err)
       setError('Erro ao fazer login. Tente novamente.')
     } finally {
       setLoading(false)
