@@ -192,13 +192,28 @@ const usuarioMapping = {
 // Usuários
 export const getUsuarios = async (): Promise<UsuarioLegacy[]> => {
   try {
+    console.log('🔍 Tentando buscar usuários no Supabase...');
+    
     const { data, error } = await supabase
       .from('usuarios')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Erro ao buscar usuários no Supabase:', error);
+      console.error('❌ Erro ao buscar usuários no Supabase:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      
+      // Verificar se é erro de tabela não existente
+      if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+        console.warn('⚠️ Tabela "usuarios" não existe no Supabase. Execute o schema SQL primeiro.');
+        console.log('📋 Para criar as tabelas, execute o arquivo database/schema.sql no painel do Supabase.');
+      }
+      
+      console.log('🔄 Usando fallback para localStorage...');
       // Fallback para localStorage
       return db.load('usuarios') || [
         {

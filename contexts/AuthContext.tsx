@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase, supabaseHelpers } from '../lib/supabase'
-import { getUsuarios, UsuarioLegacy } from '../lib/database'
+import { getUsuarios } from '../lib/database'
+import { runAllTests } from '../lib/supabase-test'
 
 interface Usuario {
   id: string
@@ -102,6 +103,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    // Executar teste do Supabase na inicialização
+    runAllTests().then(results => {
+      console.log('🔧 Resultados dos testes do Supabase:', results)
+    }).catch(err => {
+      console.error('💥 Erro ao executar testes do Supabase:', err)
+    })
+    
     // Verificar se há usuário logado no localStorage
     const savedUser = localStorage.getItem('usuarioLogado')
     const savedSessionId = localStorage.getItem('currentSessionId')

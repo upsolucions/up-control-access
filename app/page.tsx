@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import Login from "@/components/Login"
 import GerenciarLogos from "@/components/GerenciarLogos"
+import SupabaseDiagnostic from "@/components/SupabaseDiagnostic"
 import { useAuth } from "@/contexts/AuthContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -513,6 +514,12 @@ export default function ControlAccessSecurity() {
       roles: ["administrador-master", "administrador"],
     },
     {
+      id: "supabase-diagnostic",
+      label: "Diagnóstico Supabase",
+      icon: Server,
+      roles: ["administrador-master", "teste-sistema"],
+    },
+    {
       id: "gerenciar-logos",
       label: "Gerenciar Logos",
       icon: Camera,
@@ -651,6 +658,17 @@ export default function ControlAccessSecurity() {
           {activeTab === "monitoramento" && <MonitoramentoContent />}
           {activeTab === "mapa-rede" && <MapaRedeContent />}
           {activeTab === "configuracoes" && <ConfiguracoesContent />}
+          {activeTab === "supabase-diagnostic" && (
+            <div className="space-y-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold mb-2">Diagnóstico do Supabase</h2>
+                <p className="text-muted-foreground">
+                  Verificação da conectividade e configuração do banco de dados.
+                </p>
+              </div>
+              <SupabaseDiagnostic />
+            </div>
+          )}
           {activeTab === "gerenciar-logos" && <GerenciarLogos />}
           {activeTab === "todos-usuarios" && <TodosUsuarios />}
           {activeTab === "sessoes-ativas" && <GerenciarSessoes />}
