@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase, supabaseHelpers } from '../lib/supabase'
 import { getUsuarios } from '../lib/database'
 import { runAllTests } from '../lib/supabase-test'
+import bcrypt from 'bcrypt'
 
 interface Usuario {
   id: string
@@ -165,15 +166,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Tentar buscar usuários do Supabase primeiro
       const usuarios = await getUsuarios()
-      let usuario = usuarios.find((u: UsuarioLegacy) => u.email === email && u.senha === senha && u.ativo)
+      let usuario = usuarios.find((u: UsuarioLegacy) => u.email === email && u.ativo)
       
       // Se não encontrar no Supabase, buscar no localStorage como fallback
       if (!usuario) {
         const usuariosLocal = JSON.parse(localStorage.getItem('usuarios') || '[]')
-        usuario = usuariosLocal.find((u: Usuario) => u.email === email && u.senha === senha && u.ativo)
+        usuario = usuariosLocal.find((u: Usuario) => u.email === email && u.ativo)
       }
       
       if (!usuario) {
+        return { success: false, message: 'Email ou senha inválidos' }
+      }
+
+      // Verificar senha usando bcrypt
+      const senhaValida = await bcrypt.compare(senha, usuario.senha)
+      if (!senhaValida) {
         return { success: false, message: 'Email ou senha inválidos' }
       }
 

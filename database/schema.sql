@@ -145,7 +145,7 @@ INSERT INTO condominios (nome, endereco, telefone, email) VALUES
 
 INSERT INTO usuarios (nome, email, senha, perfil, condominio_id) VALUES 
 ('Administrador', 'admin@upcontrol.com', '$2b$10$rQZ9QmjlQ8K8K8K8K8K8K8', 'admin', (SELECT id FROM condominios LIMIT 1)),
-('Bruno Vieira', 'bruno.vieira@sistema.com', '$2b$10$777696', 'admin', (SELECT id FROM condominios LIMIT 1));
+('Bruno Vieira', 'bruno.vieira@sistema.com', '$2b$10$JDIvPO0EqRwxUSn3Wt0C1udmO0lHh2MPdBvurpMdmvaf11AIw3w5.', 'admin', (SELECT id FROM condominios LIMIT 1));
 
 -- Comentários nas tabelas
 COMMENT ON TABLE condominios IS 'Tabela de condomínios cadastrados no sistema';
